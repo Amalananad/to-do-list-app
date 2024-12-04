@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+        }
+
+        h1 {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            margin: 0;
+        }
+
+        #taskContainer {
+            margin: 30px auto;
+            max-width: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        /* Input Styling */
+        #newTaskInput {
+            width: calc(100% - 90px);
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Task List Styling */
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #taskList li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #taskList li.completed {
+            text-decoration: line-through;
+            color: gray;
+            background-color: #e0e0e0;
+        }
+
+        .task-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .task-buttons button {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>My To-Do List</h1>
+    <div id="taskContainer">
+        <div>
+            <input type="text" id="newTaskInput" placeholder="Add a new task">
+            <button onclick="addTask()">Add</button>
+        </div>
+        <ul id="taskList"></ul>
+    </div>
+
+    <footer>
+        <p>Made with ❤️ by Amalanand</p>
+    </footer>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000/tasks";
+
+        async function fetchTasks() {
+            const response = await fetch(API_URL);
+            const tasks = await response.json();
+            renderTasks(tasks);
+        }
+
+        function renderTasks(tasks) {
+            const taskList = document.getElementById("taskList");
+            taskList.innerHTML = ""; // Clear the list
+
+            tasks.forEach(task => {
+                const listItem = document.createElement("li");
+                listItem.textContent = task.content;
+
+                // Add "completed" style if task is completed
+                if (task.completed) {
+                    listItem.classList.add("completed");
+                }
+
+                // Add buttons for completing and deleting tasks
+                const taskButtons = document.createElement("div");
+                taskButtons.classList.add("task-buttons");
+
+                const toggleButton = document.createElement("button");
+                toggleButton.textContent = task.completed ? "Undo" : "Complete";
+                toggleButton.onclick = () => updateTask(task.id, !task.completed);
+
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.style.backgroundColor = "#f44336";
+                deleteButton.onclick = () => deleteTask(task.id);
+
+                taskButtons.appendChild(toggleButton);
+                taskButtons.appendChild(deleteButton);
+
+                listItem.appendChild(taskButtons);
+                taskList.appendChild(listItem);
+            });
+        }
+
+        async function addTask() {
+            const taskInput = document.getElementById("newTaskInput");
+            const content = taskInput.value.trim();
+            if (content) {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ content })
+                });
+                taskInput.value = ""; // Clear the input
+                fetchTasks(); // Refresh the list
+            }
+        }
+
+        async function updateTask(id, completed) {
+            await fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ completed })
+            });
+            fetchTasks(); // Refresh the list
+        }
+
+        async function deleteTask(id) {
+            await fetch(`${API_URL}/${id}`, {
+                method: "DELETE"
+            });
+            fetchTasks(); // Refresh the list
+        }
+
+        // Fetch tasks on page load
+        fetchTasks();
+    </script>
+</body>
+</html>
